@@ -5,7 +5,7 @@ from django.views.generic import View, FormView
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
 
-from chatrooms.forms import LoginForm
+from chatrooms.forms import LoginForm, RegisterForm
 
 # Create your views here.
 
@@ -37,3 +37,20 @@ class LoginView(FormView):
                            message="Either username or password is incorrect")
 
         return super().form_invalid(form)
+
+
+class RegisterView(FormView):
+    form_class = RegisterForm
+    template_name = 'chatrooms/register.html'
+    success_url = "/login"
+
+    def get(self, request: HttpRequest, *args: str, **kwargs: Any) -> HttpResponse:
+        if request.user.is_authenticated:
+            return redirect('home')
+
+        return super().get(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        form.save()
+
+        return super().form_valid(form)
