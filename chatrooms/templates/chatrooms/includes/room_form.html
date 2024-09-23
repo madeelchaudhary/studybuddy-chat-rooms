@@ -1,0 +1,44 @@
+<div class="layout__body">
+  <form class="form" method="post" action="">
+    <div class="form__group">
+      {{ form.errors.name }}
+      <label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+      {{ form.name }}
+    </div>
+
+    <div class="form__group">
+      {{ form.errors.topic_input }}
+      <label for="room_topic">Topic</label>
+
+      <input value="{% if type == 'UPDATE' %}{{ form.instance.topic }}{% endif %}" required type="text" name="topic_input" id="room_topic" list="topic-list" />
+      <datalist id="topic-list">
+        <select id="room_topic">
+          <option value="">Select your topic</option>
+          {% for choice in topics %}
+            <option value="{{ choice.name }}">{{ choice.name }}</option>
+          {% endfor %}
+        </select>
+      </datalist>
+    </div>
+
+    <div class="form__group">
+      {{ form.errors.description }}
+      <label for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+      {{ form.description }}
+    </div>
+
+    <input type="hidden" name="host" value="{{ request.user.id }}" />
+    {% csrf_token %}
+
+    <div class="form__action">
+      <a class="btn btn--dark" href="{% url 'home' %}">Cancel</a>
+      <button class="btn btn--main" type="submit">
+        {% if type == 'UPDATE' %}
+          Update
+        {% else %}
+          Create
+        {% endif %}Room
+      </button>
+    </div>
+  </form>
+</div>
