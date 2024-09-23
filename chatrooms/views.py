@@ -4,6 +4,7 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.views.generic import View, FormView, CreateView
 from django.contrib.auth import authenticate, login
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 
 from chatrooms.forms import LoginForm, RegisterForm, RoomForm
@@ -17,7 +18,10 @@ class HomeView(View):
         return HttpResponse("Homepage")
 
 
-class CreateRoomView(CreateView):
+class CreateRoomView(LoginRequiredMixin, CreateView):
+    login_url = "/login"
+    raise_exception = False
+
     form_class = RoomForm
     template_name = "chatrooms/create_room.html"
     success_url = "/"
