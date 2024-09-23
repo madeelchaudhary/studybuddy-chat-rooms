@@ -1,11 +1,13 @@
 from typing import Any
+from django.forms import BaseModelForm
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
-from django.views.generic import View, FormView
+from django.views.generic import View, FormView, CreateView
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
 
-from chatrooms.forms import LoginForm, RegisterForm
+from chatrooms.forms import LoginForm, RegisterForm, RoomForm
+from chatrooms.models import Room, Topic
 
 # Create your views here.
 
@@ -13,6 +15,28 @@ from chatrooms.forms import LoginForm, RegisterForm
 class HomeView(View):
     def get(self, request: HttpRequest):
         return HttpResponse("Homepage")
+
+
+class CreateRoomView(CreateView):
+    form_class = RoomForm
+    template_name = "chatrooms/create_room.html"
+    success_url = "/"
+    model = Room
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context['topics'] = Topic.objects.all()
+        return context
+
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        data = form.cleaned_data
+
+        topic, created = Topic.objects.get_or_create(
+            name=data.get('topic_input'))
+        room = form.save(commit=False)
+        room.topic = topic
+        room.save()
+        return redirect('home')
 
 
 class LoginView(FormView):
