@@ -43,7 +43,10 @@ class CreateRoomView(LoginRequiredMixin, CreateView):
         return redirect('home')
 
 
-class UpdateRoomView(UpdateView):
+class UpdateRoomView(LoginRequiredMixin, UpdateView):
+    login_url = "/login"
+    raise_exception = False
+
     form_class = RoomForm
     template_name = "chatrooms/update_room.html"
     success_url = "/"
