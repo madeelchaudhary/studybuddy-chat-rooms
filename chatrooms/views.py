@@ -1,8 +1,8 @@
 from typing import Any
 from django.forms import BaseModelForm
-from django.http import HttpRequest, HttpResponse
+from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
-from django.views.generic import View, FormView, CreateView
+from django.views.generic import View, FormView, CreateView, UpdateView
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
@@ -39,6 +39,40 @@ class CreateRoomView(LoginRequiredMixin, CreateView):
             name=data.get('topic_input'))
         room = form.save(commit=False)
         room.topic = topic
+        room.save()
+        return redirect('home')
+
+
+class UpdateRoomView(UpdateView):
+    form_class = RoomForm
+    template_name = "chatrooms/update_room.html"
+    success_url = "/"
+    model = Room
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context['topics'] = Topic.objects.all()
+        return context
+
+    def get(self, request: HttpRequest, *args: str, **kwargs: Any) -> HttpResponse:
+        room = self.get_object()
+        if room.host != request.user:
+            raise Http404()
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request: HttpRequest, *args: str, **kwargs: Any) -> HttpResponse:
+        room = self.get_object()
+        if room.host != request.user:
+            raise Http404()
+        return super().post(request, *args, **kwargs)
+
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        data = form.cleaned_data
+        topic, created = Topic.objects.get_or_create(
+            name=data.get('topic_input'))
+        room = form.save(commit=False)
+        room.topic = topic
+        room.host = self.request.user
         room.save()
         return redirect('home')
 
