@@ -1,21 +1,39 @@
 from typing import Any
+from django.db.models.query import QuerySet
 from django.forms import BaseModelForm
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
-from django.views.generic import View, FormView, CreateView, UpdateView
+from django.views.generic import View, FormView, CreateView, UpdateView, ListView
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
+from django.db.models import Q, Count
 
 from chatrooms.forms import LoginForm, RegisterForm, RoomForm
-from chatrooms.models import Room, Topic
+from chatrooms.models import Message, Room, Topic
 
 # Create your views here.
 
 
-class HomeView(View):
-    def get(self, request: HttpRequest):
-        return HttpResponse("Homepage")
+class HomeView(ListView):
+    model = Room
+    template_name = "chatrooms/home.html"
+    context_object_name = "rooms"
+
+    def get_queryset(self) -> QuerySet[Any]:
+        queryset = super().get_queryset()
+        q = self.request.GET.get('q') if self.request.GET.get('q') else ''
+
+        return queryset.filter(Q(name__icontains=q) | Q(topic__name__icontains=q)).annotate(participant_count=Count('participants')).select_related('topic').select_related('host')
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context['topics'] = Topic.objects.annotate(
+            room_count=Count('rooms')).order_by('-room_count')[:6]
+        context['topic_count'] = Topic.objects.all().count()
+        context['recent_messages'] = Message.objects.all().select_related(
+            'user').select_related('room').order_by('-created_at')[:6]
+        return context
 
 
 class CreateRoomView(LoginRequiredMixin, CreateView):
