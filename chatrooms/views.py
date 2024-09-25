@@ -36,6 +36,18 @@ class HomeView(ListView):
         return context
 
 
+class AllTopicsView(ListView):
+    model = Topic
+    template_name = "chatrooms/all_topics.html"
+    context_object_name = "topics"
+
+    def get_queryset(self) -> QuerySet[Any]:
+        q = self.request.GET.get('q') if self.request.GET.get('q') else ''
+        queryset = super().get_queryset()
+        
+        return queryset.filter(Q(name__icontains=q)).annotate(room_count=Count('rooms'))
+
+
 class CreateRoomView(LoginRequiredMixin, CreateView):
     login_url = "/login"
     raise_exception = False
