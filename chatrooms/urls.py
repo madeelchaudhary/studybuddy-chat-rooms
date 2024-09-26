@@ -9,6 +9,7 @@ urlpatterns = [
 
     path('create-room/', views.CreateRoomView.as_view(), name="create_room"),
     path('rooms/<int:pk>/edit', views.UpdateRoomView.as_view(), name="edit_room"),
+    path('rooms/<int:pk>/', views.RoomDetailView.as_view(), name="room_detail"),
 
     path('login/', views.LoginView.as_view(), name="login"),
     path('register/', views.RegisterView.as_view(), name="register"),

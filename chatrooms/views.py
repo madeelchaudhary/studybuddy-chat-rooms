@@ -3,7 +3,7 @@ from django.db.models.query import QuerySet
 from django.forms import BaseModelForm
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
-from django.views.generic import View, FormView, CreateView, UpdateView, ListView
+from django.views.generic import View, FormView, CreateView, UpdateView, ListView, DetailView
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
@@ -44,7 +44,7 @@ class AllTopicsView(ListView):
     def get_queryset(self) -> QuerySet[Any]:
         q = self.request.GET.get('q') if self.request.GET.get('q') else ''
         queryset = super().get_queryset()
-        
+
         return queryset.filter(Q(name__icontains=q)).annotate(room_count=Count('rooms'))
 
 
@@ -108,6 +108,23 @@ class UpdateRoomView(LoginRequiredMixin, UpdateView):
         room.host = self.request.user
         room.save()
         return redirect('home')
+
+
+class RoomDetailView(DetailView):
+    template_name = "chatrooms/room_detail.html"
+    model = Room
+    context_object_name = "room"
+
+    def get_queryset(self) -> QuerySet[Any]:
+        return super().get_queryset().select_related('host')
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context['room_messages'] = Message.objects.filter(
+            room=self.object).select_related('user').order_by('created_at')
+        context['participants'] = self.object.participants.all()
+        context['participant_count'] = self.object.participants.count()
+        return context
 
 
 class LoginView(FormView):
