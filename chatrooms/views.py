@@ -126,6 +126,18 @@ class RoomDetailView(DetailView):
         context['participant_count'] = self.object.participants.count()
         return context
 
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+
+        room = self.get_object()
+        content = request.POST.get('content')
+        if content:
+            room.participants.add(request.user)
+            Message.objects.create(
+                room=room, user=request.user, content=content)
+        return self.get(request, *args, **kwargs)
+
 
 class LoginView(FormView):
     form_class = LoginForm
