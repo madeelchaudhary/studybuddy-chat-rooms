@@ -2,8 +2,9 @@ from typing import Any
 from django.db.models.query import QuerySet
 from django.forms import BaseModelForm
 from django.http import Http404, HttpRequest, HttpResponse
+from django.http.response import HttpResponseRedirect
 from django.shortcuts import redirect, render
-from django.views.generic import View, FormView, CreateView, UpdateView, ListView, DetailView
+from django.views.generic import View, FormView, CreateView, UpdateView, ListView, DetailView, DeleteView
 from django.contrib.auth import authenticate, login, get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
@@ -138,6 +139,28 @@ class RoomDetailView(DetailView):
             Message.objects.create(
                 room=room, user=request.user, content=content)
         return self.get(request, *args, **kwargs)
+
+
+class DeleteRoomView(LoginRequiredMixin, DeleteView):
+    login_url = "/login"
+    raise_exception = False
+
+    template_name = "chatrooms/delete.html"
+    model = Room
+    context_object_name = "object"
+    success_url = "/"
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        room = self.get_object()
+        if request.user != room.host:
+            raise Http404()
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request: HttpRequest, *args: str, **kwargs: Any) -> HttpResponse:
+        room = self.get_object()
+        if request.user != room.host:
+            raise Http404()
+        return super().post(request, *args, **kwargs)
 
 
 class UserProfileView(DetailView):
