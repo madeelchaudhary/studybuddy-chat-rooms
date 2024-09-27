@@ -4,7 +4,7 @@ from django.forms import BaseModelForm
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.views.generic import View, FormView, CreateView, UpdateView, ListView, DetailView
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.db.models import Q, Count
@@ -13,6 +13,7 @@ from chatrooms.forms import LoginForm, RegisterForm, RoomForm
 from chatrooms.models import Message, Room, Topic
 
 # Create your views here.
+User = get_user_model()
 
 
 class HomeView(ListView):
@@ -137,6 +138,26 @@ class RoomDetailView(DetailView):
             Message.objects.create(
                 room=room, user=request.user, content=content)
         return self.get(request, *args, **kwargs)
+
+
+class UserProfileView(DetailView):
+    template_name = 'chatrooms/user_profile.html'
+    model = User
+    context_object_name = 'user'
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        user = self.object
+
+        context['rooms'] = user.rooms.all().annotate(participant_count=Count(
+            'participants')).select_related('topic').select_related('host')
+        context['topics'] = Topic.objects.annotate(
+            room_count=Count('rooms')).order_by('-room_count')[:6]
+        context['topic_count'] = Topic.objects.all().count()
+        context['recent_messages'] = Message.objects.filter(
+            user=user).select_related('user').select_related('room').order_by('-created_at')[:6]
+
+        return context
 
 
 class LoginView(FormView):
