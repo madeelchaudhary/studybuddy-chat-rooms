@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from chatrooms.models import Room, Topic
+from chatrooms.models import Message, Room, Topic
 
 # Register your models here.
 
@@ -15,3 +15,12 @@ class RoomAdmin(admin.ModelAdmin):
 @admin.register(Topic)
 class TopicAdmin(admin.ModelAdmin):
     search_fields = ['name']
+
+
+@admin.register(Message)
+class MessageAdmin(admin.ModelAdmin):
+    list_filter = ['user', 'room']
+    sortable_by = ["created_at"]
+
+    readonly_fields = ['created_at', 'updated_at']
+    autocomplete_fields = ['user', 'room']
