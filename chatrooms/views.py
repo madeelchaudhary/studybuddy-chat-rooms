@@ -163,6 +163,28 @@ class DeleteRoomView(LoginRequiredMixin, DeleteView):
         return super().post(request, *args, **kwargs)
 
 
+class DeleteMessageView(LoginRequiredMixin, DeleteView):
+    login_url = "/login"
+    raise_exception = False
+
+    template_name = "chatrooms/delete.html"
+    model = Message
+    context_object_name = "object"
+    success_url = "/"
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        message = self.get_object()
+        if request.user != message.user:
+            raise Http404()
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request: HttpRequest, *args: str, **kwargs: Any) -> HttpResponse:
+        message = self.get_object()
+        if request.user != message.user:
+            raise Http404()
+        return super().post(request, *args, **kwargs)
+
+
 class UserProfileView(DetailView):
     template_name = 'chatrooms/user_profile.html'
     model = User
